@@ -1,5 +1,7 @@
-from listener import VoiceListener
-from speaker import VoiceSpeaker
+from voice.listener import VoiceListener
+from voice.speaker import VoiceSpeaker
+from shared.logging import log
+
 
 def run_voice_test():
     print("\n[Zara Test] Initializing voice interface...")
