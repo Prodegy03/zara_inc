@@ -1,27 +1,40 @@
-import whisper
 import os
+import tempfile
 import sounddevice as sd
 import numpy as np
-import scipy.io.wavfile as wav
-from tempfile import NamedTemporaryFile
+import whisper
 from shared.logging import log
+import time
 
 class VoiceListener:
-    def __init__(self, model_size="base"):
+    def __init__(self):
         log("[Voice] Loading Whisper model...")
-        self.model = whisper.load_model(model_size)
+        self.model = whisper.load_model("base")  # You can change to "small", "medium", or "large"
 
-    def listen_and_transcribe(self, duration=5, fs=16000):
+    def listen_and_transcribe(self, duration=5, samplerate=16000):
         log(f"[Voice] Listening for {duration} seconds...")
-        recording = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='int16')
+
+        # Record from mic
+        recording = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=1, dtype='float32')
         sd.wait()
 
-        with NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
-            wav.write(tmpfile.name, fs, recording)
-            log(f"[Voice] Audio recorded to {tmpfile.name}")
-            result = self.model.transcribe(tmpfile.name)
-            os.remove(tmpfile.name)
+        # Save to temp WAV file
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
+            filename = tmpfile.name
+            # Write audio as WAV
+            import soundfile as sf
+            sf.write(tmpfile, recording, samplerate)
 
-        transcript = result.get("text", "").strip()
-        log(f"[Voice] Transcribed text: '{transcript}'")
-        return transcript
+        log(f"[Voice] Audio recorded to {filename}")
+
+        try:
+            # Transcribe audio
+            result = self.model.transcribe(filename)
+            text = result["text"]
+            log(f"[Voice] Transcription: {text}")
+        finally:
+            # Ensure file is deleted safely after transcription
+            time.sleep(0.1)  # small delay to ensure file is not in use
+            os.remove(filename)
+
+        return text
