@@ -1,0 +1,29 @@
+version: '3.9'
+services:
+  zara_core:
+    build:
+      context: .
+      dockerfile: docker/core.Dockerfile
+    volumes:
+      - ./volumes/zara_project:/zara_project
+      - ./volumes/memory:/memory
+    command: ["python", "zara_core/main.py"]
+
+  autocoder:
+    build:
+      context: .
+      dockerfile: docker/coder.Dockerfile
+    volumes:
+      - ./volumes/zara_project:/zara_project
+
+  phi_agent:
+    build:
+      context: .
+      dockerfile: docker/phi.Dockerfile
+
+  voice:
+    build:
+      context: .
+      dockerfile: docker/voice.Dockerfile
+    volumes:
+      - ./volumes/zara_project:/zara_project
