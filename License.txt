@@ -1,0 +1,7 @@
+Copyright (c) 2025 Zara Inc. All Rights Reserved.
+
+This software and associated documentation files (the "Software") are the exclusive property of Zara Inc. and are protected by copyright laws and international treaties.
+
+Permission is hereby granted to the user of this repository to use, copy, and modify the Software strictly for personal, non-commercial purposes. Commercial use, redistribution, sublicensing, or any other form of re-distribution is strictly prohibited without explicit written consent from Zara Inc.
+
+The Software is provided "AS IS", without warranty of any kind, express or implied. In no event shall Zara Inc. be liable for any claim, damages, or other liability arising from the use of the Software.
