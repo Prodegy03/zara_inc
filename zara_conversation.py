@@ -57,3 +57,4 @@ while True:
     except Exception as e:
         log(f"[Zara Chat] Error: {e}")
         continue
+ 
