@@ -1,32 +1,57 @@
 # memory/long_term_memory.py
 
 import sqlite3
+import os
 from datetime import datetime
 
-class LongTermMemory:
-    def __init__(self, db_path="memory/long_term_memory.db"):
-        self.conn = sqlite3.connect(db_path)
-        self.create_table()
+DB_PATH = os.path.join(os.path.dirname(__file__), "zara_memory.db")
 
-    def create_table(self):
-        with self.conn:
-            self.conn.execute("""
-                CREATE TABLE IF NOT EXISTS memory (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    role TEXT,
-                    content TEXT,
-                    timestamp TEXT
-                )
-            """)
-
-    def store(self, role, content):
-        with self.conn:
-            self.conn.execute(
-                "INSERT INTO memory (role, content, timestamp) VALUES (?, ?, ?)",
-                (role, content, datetime.utcnow().isoformat())
+# Create or update the conversations table
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_fact BOOLEAN DEFAULT 0
             )
+        ''')
+        conn.commit()
 
-    def get_all(self):
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT role, content, timestamp FROM memory ORDER BY id DESC")
-        return cursor.fetchall()
+# Store a message with optional fact flag
+def store_message(role, content, is_fact=False):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO conversations (role, content, is_fact)
+            VALUES (?, ?, ?)
+        ''', (role, content, int(is_fact)))
+        conn.commit()
+
+# Find a matching fact or fallback to recent assistant message
+def find_similar_or_recent(user_input):
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        # Search for a matching fact (basic string containment search for now)
+        c.execute('''
+            SELECT content FROM conversations
+            WHERE is_fact = 1 AND content LIKE ?
+            ORDER BY timestamp DESC LIMIT 1
+        ''', (f"%{user_input}%",))
+        row = c.fetchone()
+        if row:
+            return row[0]
+
+        # Fallback: get most recent assistant message
+        c.execute('''
+            SELECT content FROM conversations
+            WHERE role = 'assistant'
+            ORDER BY timestamp DESC LIMIT 1
+        ''')
+        row = c.fetchone()
+        return row[0] if row else None
+
+init_db()
